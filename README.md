@@ -7,6 +7,7 @@
 旧项目根目录保持不变，便于对照。
 
 > **在线演示：** <https://choosecoursesystem-springboot.onrender.com/login>  
+> 公开演示模式已开启：登录页会自动填充学生账号、密码和验证码，直接点击“提交”即可。  
 > Render 免费实例 15 分钟无访问会休眠，首次打开约 30–60 秒冷启动。
 
 它最早是一个 Java Web 课程作业（JSP + Servlet + JDBC + MySQL）。后来补前端和
