@@ -1,5 +1,8 @@
 # Railway 部署操作手册
 
+> Railway 现在需要付费。**免费部署请优先看 [DEPLOY_RENDER.md](DEPLOY_RENDER.md)。**
+> 本文件保留给已经使用 Railway 或愿意付费的场景。
+
 本项目是 **Spring Boot 3 + Thymeleaf + PostgreSQL** 单体应用，已经带 `Dockerfile`，
 推荐部署组合：
 

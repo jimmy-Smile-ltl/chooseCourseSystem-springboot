@@ -219,7 +219,8 @@ python tools/etl_mysql_to_pg.py
 
 ## Docker / 部署
 
-完整的 Railway 操作手册见 **[DEPLOY_RAILWAY.md](DEPLOY_RAILWAY.md)**。
+免费部署首选 **Render**，完整操作指南见 **[DEPLOY_RENDER.md](DEPLOY_RENDER.md)**。
+Railway 现在需要付费，仅作为备选，见 **[DEPLOY_RAILWAY.md](DEPLOY_RAILWAY.md)**。
 下面是本地 Docker 验证命令。
 
 ```bash
@@ -233,13 +234,13 @@ docker run --rm -p 8080:8080 \
   choose-course
 ```
 
-平台选择（推荐 **Zeabur 或 Railway**，数据库放 Neon Singapore）：
+平台选择（免费首选 **Render**，数据库放 Neon Singapore）：
 
 | 平台 | 说明 |
 |---|---|
-| Zeabur | **推荐（国内访问）**：香港/新加坡区域，Docker + GitHub 部署，中文界面 |
-| Railway | **推荐（最省心）**：Docker 部署简单，选择 Singapore，Hobby 套餐即可 |
-| Render | Docker；免费实例会休眠，Java 冷启动很慢，不推荐免费档 |
+| Render | **推荐（免费）**：Docker、512MB、Singapore，15 分钟无访问会休眠 |
+| Zeabur | 香港/新加坡区域，国内访问相对好；按量计费 |
+| Railway | Docker 部署简单，但需要付费 |
 | Fly.io | 香港/新加坡区域，CLI 操作，适合愿意折腾的人 |
 | Vercel | **不能跑 Java**，只能托管拆分出去的前端 |
 
