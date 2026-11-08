@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>批量导入课程 · 选课系统</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<nav th:replace="~{fragments/nav :: nav}"></nav>
+
+<main class="container">
+    <h1>批量导入课程</h1>
+    <p class="subtitle">
+        上传 UTF-8 CSV；同一课程号写多行可添加多个上课时段。整批校验通过才会写库，任何错误都会整批回滚。
+    </p>
+
+    <div class="alert ok" th:if="${message}" th:text="${message}"></div>
+    <div class="alert error" th:if="${uploadError}" th:text="${uploadError}"></div>
+    <div class="alert error" th:if="${importResult != null and !#lists.isEmpty(importResult.errors)}">
+        校验未通过，共 <strong th:text="${#lists.size(importResult.errors)}">0</strong> 个错误，未导入任何课程。
+    </div>
+
+    <div class="form-card import-card">
+        <h2>CSV 格式说明</h2>
+        <ul class="import-help">
+            <li>文件必须是 <strong>UTF-8 编码的 CSV</strong>，首行为表头；Excel 请使用“另存为 CSV UTF-8”。</li>
+            <li>必需列：课程号、课程名称、容量、学分、星期、开始时间、结束时间。</li>
+            <li>可选列：教师、地点、先修课程号、是否开放（默认“是”）。</li>
+            <li>先修课可以有多个，用 <code>|</code>、<code>、</code> 或 <code>;</code> 分隔。</li>
+            <li>同一课程号写多行即可添加多个时段，但名称、教师、容量、学分、先修课等信息必须一致。</li>
+            <li>星期支持 1-7 或 周一…周日；时间使用 24 小时制 HH:mm；学分 0-12，容量 0-10000。</li>
+            <li>课程号只能包含字母、数字、下划线、短横线；已存在的课程号会被拒绝。</li>
+            <li>一次最多 200 门课程、1000 行数据、1MB 文件；任何一行校验失败都不会写入数据库。</li>
+        </ul>
+
+        <div class="panel-actions">
+            <a class="button" th:href="@{/admin/courses/import/template}">下载 CSV 模板</a>
+            <a class="button" th:href="@{/admin/courses}">返回课程管理</a>
+        </div>
+
+        <form th:action="@{/admin/courses/import}" method="post"
+              enctype="multipart/form-data" class="stack">
+            <label>
+                CSV 文件
+                <input type="file" name="file" accept=".csv,text/csv" required>
+            </label>
+            <button type="submit" class="primary">校验并导入</button>
+        </form>
+    </div>
+
+    <div class="card error-report" th:if="${importResult != null and !#lists.isEmpty(importResult.errors)}">
+        <h2>错误明细</h2>
+        <div class="table-wrap">
+            <table class="error-table">
+                <thead>
+                <tr>
+                    <th>行号</th>
+                    <th>错误说明</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="e : ${importResult.errors}">
+                    <td th:text="${e.line == 0 ? '文件' : e.line}">1</td>
+                    <td th:text="${e.message}">错误</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+</body>
+</html>

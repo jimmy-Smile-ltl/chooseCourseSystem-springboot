@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>选课 · 选课系统</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<nav th:replace="~{fragments/nav :: nav}"></nav>
+
+<main class="container">
+    <h1>开始选课</h1>
+    <p class="subtitle">
+        先修、余量、时间冲突会在提交前预检；勾选课程可以实时看到预计学分。
+    </p>
+
+    <div class="alert ok" th:if="${message}" th:text="${message}"></div>
+
+    <form class="course-toolbar auto-search" th:action="@{/student/courses}" method="get">
+        <input id="course-search" type="search" name="q" th:value="${q}"
+               placeholder="输入即搜索：课程名 / 教师 / 课程号">
+        <label class="filter-chip">
+            <input type="checkbox" name="available" value="true" th:checked="${available}"> 只看有空位
+        </label>
+        <label class="filter-chip">
+            <input type="checkbox" name="noConflict" value="true" th:checked="${noConflict}"> 只看无冲突
+        </label>
+        <span class="hint-inline">输入即搜索</span>
+        <button type="submit" class="visually-hidden">搜索</button>
+        <a class="button" th:href="@{/student/courses}">重置</a>
+    </form>
+
+    <div class="course-toolbar secondary-toolbar">
+        <button id="smart-pick" type="button" class="primary">⚡ 智能推荐（本页）</button>
+        <button id="clear-picks" type="button" class="button">清空勾选</button>
+        <span class="hint-inline">筛选和分页由服务端完成，智能推荐只作用于当前页。</span>
+    </div>
+
+    <div id="cart-summary" class="cart-summary">
+        <span>已勾选 <strong id="pick-count">0</strong> 门</span>
+        <span>
+            新增 <strong id="pick-credits">0</strong> 学分 ·
+            累计 <strong id="pick-total" th:text="${selectedCredits}">0</strong>
+            / <span th:text="${maxCredits}">30</span> 学分
+        </span>
+        <span id="credit-goal-status" class="credit-goal-status">
+            目标 <strong th:text="${creditGoal}">20</strong> 学分
+        </span>
+        <span id="pick-conflicts" class="conflict-text"></span>
+    </div>
+
+    <div id="credit-celebration" hidden
+         th:attr="data-goal=${creditGoal},data-selected-credits=${selectedCredits},
+                  data-max-credits=${maxCredits}"></div>
+
+    <canvas id="credit-hud" class="credit-hud" aria-hidden="true"
+            th:attr="data-max=${maxCredits},data-goal=${creditGoal},
+                     data-selected=${selectedCredits}"></canvas>
+
+    <form id="courseForm" th:action="@{/student/enroll}" method="post"
+          th:attr="data-max-credits=${maxCredits},data-selected-credits=${selectedCredits}">
+        <div class="table-wrap">
+            <table id="courseTable">
+                <thead>
+                <tr>
+                    <th>选择</th>
+                    <th>课程号</th>
+                    <th>课程名称</th>
+                    <th>教师</th>
+                    <th>学分</th>
+                    <th>先修课</th>
+                    <th>上课时间</th>
+                    <th>地点</th>
+                    <th>余量 / 容量</th>
+                    <th>状态</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(courses)}">
+                    <td colspan="10" class="empty-cell">没有匹配的课程，试试调整筛选条件。</td>
+                </tr>
+                <tr class="course-row" th:each="c : ${courses}"
+                    th:attr="data-cno=${c.cno},data-name=${c.name},data-teacher=${c.teacher},
+                             data-credits=${c.credits},data-remaining=${c.remainingSeats},
+                             data-full=${c.full},data-prereq-missing=${c.prerequisiteMissing},
+                             data-conflict=${c.conflict},data-selected=${c.selected},
+                             data-completed=${c.completed}">
+                    <td>
+                        <input class="course-checkbox" type="checkbox" name="cno"
+                               th:value="${c.cno}"
+                               th:disabled="${c.selected or c.completed or c.full or c.prerequisiteMissing or c.conflict}">
+                    </td>
+                    <td th:text="${c.cno}">cno</td>
+                    <td th:text="${c.name}">课程</td>
+                    <td th:text="${c.teacher}">教师</td>
+                    <td th:text="${c.credits}">2</td>
+                    <td th:text="${c.prerequisiteText}">-</td>
+                    <td th:text="${c.timeText}">时间</td>
+                    <td th:text="${c.location}">地点</td>
+                    <td class="remaining-cell">
+                        <span th:text="${c.remainingSeats}">0</span>
+                        /
+                        <span th:text="${c.capacity}">0</span>
+                    </td>
+                    <td>
+                        <span class="badge muted" th:if="${c.completed}">已修</span>
+                        <span class="badge ok" th:if="${!c.completed and c.selected}">已选</span>
+                        <span class="badge warn" th:if="${!c.completed and !c.selected and c.prerequisiteMissing}">先修未满足</span>
+                        <span class="badge warn" th:if="${!c.completed and !c.selected and !c.prerequisiteMissing and c.conflict}">时间冲突</span>
+                        <span class="badge warn" th:if="${!c.completed and !c.selected and !c.prerequisiteMissing and !c.conflict and c.full}">已满</span>
+                        <span class="badge" th:if="${!c.completed and !c.selected and !c.prerequisiteMissing and !c.conflict and !c.full}">可选</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="panel-actions">
+            <button type="submit" class="primary">提交选课</button>
+            <a class="button" th:href="@{/student/schedule}">查看课表</a>
+        </div>
+    </form>
+
+    <div class="pagination" th:if="${coursePage.totalItems > 0}">
+        <a class="page-link" th:if="${coursePage.hasPrevious}"
+           th:href="@{/student/courses(page=${coursePage.page - 1}, q=${q},
+                     available=${available}, noConflict=${noConflict})}">上一页</a>
+        <a class="page-link" th:each="n : ${coursePage.pageNumbers}"
+           th:classappend="${n == coursePage.page} ? 'active'"
+           th:href="@{/student/courses(page=${n}, q=${q},
+                     available=${available}, noConflict=${noConflict})}"
+           th:text="${n}">1</a>
+        <a class="page-link" th:if="${coursePage.hasNext}"
+           th:href="@{/student/courses(page=${coursePage.page + 1}, q=${q},
+                     available=${available}, noConflict=${noConflict})}">下一页</a>
+        <span class="page-info">
+            第 <span th:text="${coursePage.fromItem}">1</span>–<span th:text="${coursePage.toItem}">10</span> 条，
+            共 <strong th:text="${coursePage.totalItems}">0</strong> 门
+        </span>
+    </div>
+
+    <script type="application/json" id="session-data" th:utext="${sessionsJson}"></script>
+
+    <h2>本学期已选课程</h2>
+
+    <p class="empty" th:if="${#lists.isEmpty(selectedCourses)}">还没有选课。</p>
+
+    <div class="selected-summary" th:if="${!#lists.isEmpty(selectedCourses)}">
+        已选 <strong th:text="${#lists.size(selectedCourses)}">0</strong> 门 ·
+        <strong th:text="${selectedCredits}">0</strong> / <span th:text="${maxCredits}">30</span> 学分
+    </div>
+
+    <form th:action="@{/student/withdraw}" method="post" th:if="${!#lists.isEmpty(selectedCourses)}">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>退课</th>
+                    <th>课程号</th>
+                    <th>课程名称</th>
+                    <th>教师</th>
+                    <th>学分</th>
+                    <th>上课时间</th>
+                    <th>地点</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="c : ${selectedCourses}">
+                    <td><input type="checkbox" name="cno" th:value="${c.cno}"></td>
+                    <td th:text="${c.cno}">cno</td>
+                    <td th:text="${c.name}">课程</td>
+                    <td th:text="${c.teacher}">教师</td>
+                    <td th:text="${c.credits}">2</td>
+                    <td th:text="${c.timeText}">时间</td>
+                    <td th:text="${c.location}">地点</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="panel-actions">
+            <button type="submit" class="danger">退选选中课程</button>
+        </div>
+    </form>
+
+    <script th:src="@{/js/auto-search.js}" defer></script>
+    <script th:src="@{/js/credit-celebration.js}" defer></script>
+    <script th:src="@{/js/credit-hud.js}" defer></script>
+    <script th:src="@{/js/conflict-beam.js}" defer></script>
+    <script th:src="@{/js/course-planner.js}" defer></script>
+</main>
+</body>
+</html>

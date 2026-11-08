@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>修改密保手机 · 选课系统</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<nav th:replace="~{fragments/nav :: nav}"></nav>
+
+<main class="container">
+    <h1>修改密保手机</h1>
+    <p class="subtitle">
+        当前密保手机：
+        <strong th:text="${student != null ? student.phone : '-'}">-</strong>
+    </p>
+
+    <div class="alert error" th:if="${error}" th:text="${error}"></div>
+
+    <form th:action="@{/student/phone}" method="post" class="form-card">
+        <div class="form-grid">
+            <label>
+                当前密码
+                <input type="password" name="password" required autocomplete="current-password">
+            </label>
+            <label>
+                新密保手机
+                <input type="text" name="newPhone" required maxlength="20" placeholder="请输入新手机号">
+            </label>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="primary">保存手机号</button>
+            <a class="button" th:href="@{/student/profile}">取消</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

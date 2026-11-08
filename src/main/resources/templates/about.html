@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>关于 · 选课系统</title>
+    <link rel="shortcut icon" th:href="@{/image/logo.png}" type="image/x-icon">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/info.css}">
+</head>
+<body class="info-page">
+<main class="info-shell">
+    <div class="info-top">
+        <a class="back" th:href="@{/login}">← 返回登录</a>
+        <span>选课系统</span>
+    </div>
+
+    <section class="info-card">
+        <h1>关于</h1>
+        <p>本项目最初是一份课程设计，现已重写为 Spring Boot + PostgreSQL 版本。</p>
+
+        <div class="info-grid">
+            <div class="info-box">
+                <h3>原版技术</h3>
+                <p>JSP + JavaBean + Servlet + JDBC</p>
+                <p>MySQL 8 + Tomcat 8 + Java 8</p>
+                <p>项目创建：2021-07-11</p>
+            </div>
+            <div class="info-box">
+                <h3>重写版技术</h3>
+                <p>Spring Boot 3 + Thymeleaf + Spring Security</p>
+                <p>PostgreSQL + Flyway</p>
+                <p>Docker 部署</p>
+            </div>
+        </div>
+
+        <h2>重写版</h2>
+        <ul>
+            <li>Spring Boot 3 + Thymeleaf + Spring Security</li>
+            <li>PostgreSQL（Neon），Flyway 管理 schema</li>
+            <li>选课事务使用行锁、唯一约束和实时容量统计</li>
+            <li>保留原版登录页视频背景和忘记密码 canvas 粒子特效</li>
+            <li>部署：Docker → Zeabur / Railway / Render / Fly.io</li>
+        </ul>
+
+        <h2>说明</h2>
+        <p>原版代码和 SQL dump 保留在仓库根目录，重写版位于 <code>server/</code>。</p>
+        <p>登录页视频和忘记密码背景图来自原项目，仅用于课程演示。</p>
+    </section>
+</main>
+</body>
+</html>

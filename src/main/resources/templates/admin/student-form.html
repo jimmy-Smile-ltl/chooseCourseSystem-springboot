@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${editing} ? '编辑学生 · 选课系统' : '新增学生 · 选课系统'">学生表单</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<nav th:replace="~{fragments/nav :: nav}"></nav>
+
+<main class="container">
+    <h1 th:text="${editing} ? '编辑学生' : '新增学生'">学生表单</h1>
+    <p class="subtitle">学生账号由管理员创建；已修课程决定先修课校验。</p>
+
+    <div class="alert error" th:if="${serviceErrors}">
+        <ul class="error-list">
+            <li th:each="error : ${serviceErrors}" th:text="${error}"></li>
+        </ul>
+    </div>
+    <form th:action="@{${formAction}}" method="post" th:object="${studentForm}" class="form-card">
+        <div class="alert error" th:if="${#fields.hasErrors()}">请检查表单中的错误。</div>
+        <div class="form-grid">
+            <label>
+                学号
+                <input th:field="*{sno}" th:readonly="${editing}" placeholder="例如 20200001">
+                <span class="field-error" th:if="${#fields.hasErrors('sno')}" th:errors="*{sno}"></span>
+            </label>
+            <label>
+                姓名
+                <input th:field="*{name}" placeholder="学生姓名">
+                <span class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></span>
+            </label>
+            <label>
+                年级
+                <input th:field="*{grade}" placeholder="例如 2024级">
+                <span class="field-error" th:if="${#fields.hasErrors('grade')}" th:errors="*{grade}"></span>
+            </label>
+            <label>
+                专业
+                <input th:field="*{major}" placeholder="例如 计算机科学与技术">
+                <span class="field-error" th:if="${#fields.hasErrors('major')}" th:errors="*{major}"></span>
+            </label>
+            <label>
+                学院
+                <input th:field="*{college}" placeholder="例如 信息学院">
+                <span class="field-error" th:if="${#fields.hasErrors('college')}" th:errors="*{college}"></span>
+            </label>
+            <label>
+                密保手机
+                <input th:field="*{phone}" placeholder="用于忘记密码验证">
+                <span class="field-error" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}"></span>
+            </label>
+            <label>
+                密码
+                <input type="password" th:field="*{password}"
+                       th:placeholder="${editing} ? '留空表示不修改' : '留空默认 123456'">
+                <span class="field-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></span>
+            </label>
+        </div>
+
+        <label class="full-width">
+            已修课程
+            <select th:field="*{completedCnos}" multiple size="8" class="multi-select">
+                <option th:each="opt : ${courseOptions}"
+                        th:value="${opt.cno}"
+                        th:text="${opt.cno + ' · ' + opt.name}">课程</option>
+            </select>
+            <span class="hint-inline">可多选；用于选课时的先修课判断。</span>
+        </label>
+
+        <div class="form-actions">
+            <button type="submit" class="primary" th:text="${editing} ? '保存修改' : '创建学生'">提交</button>
+            <a class="button" th:href="@{/admin/students}">取消</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

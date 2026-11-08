@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>学生已选课程 · 选课系统</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<nav th:replace="~{fragments/nav :: nav}"></nav>
+
+<main class="container">
+    <h1>学生已选课程</h1>
+    <p class="subtitle">
+        <span th:text="${student.sno}">sno</span>
+        ·
+        <span th:text="${student.name}">姓名</span>
+        （共 <span th:text="${#lists.size(courses)}">0</span> 门）
+    </p>
+
+    <p><a class="button" th:href="@{/admin/students}">返回学生列表</a></p>
+
+    <p class="empty" th:if="${#lists.isEmpty(courses)}">该学生本学期还没有选课。</p>
+
+    <div class="table-wrap" th:if="${!#lists.isEmpty(courses)}">
+        <table>
+            <thead>
+            <tr>
+                <th>课程号</th>
+                <th>课程名称</th>
+                <th>教师</th>
+                <th>上课时间</th>
+                <th>地点</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="c : ${courses}">
+                <td th:text="${c.cno}">cno</td>
+                <td th:text="${c.name}">课程</td>
+                <td th:text="${c.teacher}">教师</td>
+                <td th:text="${c.timeText}">时间</td>
+                <td th:text="${c.location}">地点</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

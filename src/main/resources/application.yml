@@ -1,0 +1,64 @@
+app:
+  # 本地/演示环境：写入演示数据
+  demo-seed: ${APP_DEMO_SEED:false}
+  # 本地/演示环境：登录页自动填充 20200001/123456 + 验证码
+  # 生产环境不要开启
+  demo-login: ${APP_DEMO_LOGIN:false}
+  # 每学期可选学分上限
+  max-credits: ${APP_MAX_CREDITS:30}
+  # 学分目标：累计达到后在选课页触发礼炮特效
+  credit-goal: ${APP_CREDIT_GOAL:20}
+  # 列表分页大小（课程列表默认每页 20 门）
+  page-size: ${APP_PAGE_SIZE:20}
+
+spring:
+  application:
+    name: choose-course
+
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/choose_course}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:5}
+      minimum-idle: 1
+      connection-timeout: 10000
+      keepalive-time: 30000
+
+  # 应用运行时使用 Neon pooled 连接；Flyway 默认复用 DataSource。
+  # 如果 Neon pooler 下 Flyway 报错，部署时设置 SPRING_FLYWAY_URL 指向 direct 连接。
+  flyway:
+    enabled: true
+
+  thymeleaf:
+    cache: ${THYMELEAF_CACHE:false}
+
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 4MB
+
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      timeout: 8h
+      cookie:
+        http-only: true
+        same-site: lax
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  level:
+    root: INFO
+    com.example.choosecourse: INFO

@@ -1,0 +1,63 @@
+@charset "UTF-8";
+
+.fx-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.fx-text {
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    color: #ffffff;
+    font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+    font-size: clamp(16px, 2vw, 22px);
+    font-weight: 800;
+    letter-spacing: .08em;
+    white-space: nowrap;
+    text-shadow:
+        0 0 8px #67e8f9,
+        0 0 20px #a78bfa,
+        0 0 36px rgba(236, 72, 153, .6);
+    animation: fx-float 1.6s cubic-bezier(.2, .8, .3, 1) forwards;
+}
+
+@keyframes fx-float {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(.5) rotate(-4deg);
+    }
+    15% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.08) rotate(2deg);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -190px) scale(.9) rotate(-3deg);
+    }
+}
+
+/* Live2D 看板娘：放在左下角，登录卡片保持在它上方 */
+#waifu {
+    z-index: 5 !important;
+}
+
+#waifu-toggle {
+    z-index: 6 !important;
+}
+
+#waifu #live2d {
+    filter: drop-shadow(0 0 20px rgba(56, 189, 248, .35));
+}
+
+@media (max-width: 980px) {
+    #waifu,
+    #waifu-toggle {
+        display: none !important;
+    }
+}

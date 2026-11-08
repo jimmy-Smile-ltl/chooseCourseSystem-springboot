@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>课表 · 选课系统</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<nav th:replace="~{fragments/nav :: nav}"></nav>
+
+<main class="container">
+    <div class="schedule-head">
+        <div>
+            <h1>我的课表</h1>
+            <p class="subtitle">
+                已选 <strong th:text="${selectedCredits}">0</strong> 学分 ·
+                色块高度表示连续节次 · 鼠标悬停查看详情
+                <span id="schedule-now" class="schedule-now" hidden></span>
+            </p>
+        </div>
+        <a class="button" th:href="@{/student/schedule.ics}">📅 导出日历 (.ics)</a>
+    </div>
+
+    <p class="empty" th:if="${!hasSchedule}">
+        还没有选课，先去<a th:href="@{/student/courses}">选课</a>吧。
+    </p>
+
+    <div class="timetable-wrap" th:if="${hasSchedule}">
+        <div class="tt-grid">
+            <canvas id="schedule-fx" class="schedule-fx" aria-hidden="true"></canvas>
+            <div class="tt-corner">节次</div>
+            <div class="tt-day" th:each="d : ${dayLabels}" th:text="${d}"></div>
+
+            <th:block th:each="p, pStat : ${periodLabels}">
+                <div class="tt-period" th:text="${p}"
+                     th:style="|grid-column: 1; grid-row: ${pStat.index + 2};|"></div>
+                <div class="tt-cell" th:each="d, dStat : ${dayLabels}"
+                     th:style="|grid-column: ${dStat.index + 2}; grid-row: ${pStat.index + 2};|"></div>
+            </th:block>
+
+            <div class="tt-block" th:each="b : ${blocks}"
+                 th:class="|tt-block c${b.colorIndex}${b.conflict ? ' conflict' : ''}|"
+                 th:style="|grid-column: ${b.dayOfWeek + 1}; grid-row: ${b.startPeriod + 1} / ${b.endPeriod + 2};|"
+                 th:title="${b.name} + ' / ' + ${b.teacher} + ' / ' + ${b.location}">
+                <div class="tt-name" th:text="${b.name}">课程</div>
+                <div class="tt-meta" th:text="${b.teacher} + ' · ' + ${b.location}">教师 · 地点</div>
+                <div class="tt-code" th:text="${b.cno}">cno</div>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/js/schedule-fx.js}" defer></script>
+</main>
+</body>
+</html>

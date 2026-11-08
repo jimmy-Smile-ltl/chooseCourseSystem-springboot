@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>帮助 · 选课系统</title>
+    <link rel="shortcut icon" th:href="@{/image/logo.png}" type="image/x-icon">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/info.css}">
+</head>
+<body class="info-page">
+<main class="info-shell">
+    <div class="info-top">
+        <a class="back" th:href="@{/login}">← 返回登录</a>
+        <span th:text="'选课系统'">选课系统</span>
+    </div>
+
+    <section class="info-card">
+        <h1>帮助</h1>
+        <p>此系统为学生选课系统，集学生信息、登录、选课、退课、课表、个人信息等功能。</p>
+
+        <h2>学生</h2>
+        <ul>
+            <li>学生账号由管理员统一创建，不开放注册。</li>
+            <li>选课时会校验先修课、重复选课、上课时间冲突和课程容量。</li>
+            <li>忘记密码需要账号、密保手机和验证码；重置后使用新密码登录。</li>
+            <li>登录后可以查看课表、修改密码和密保手机。</li>
+        </ul>
+
+        <h2>管理员</h2>
+        <ul>
+            <li>可以新增、编辑、停开/恢复、删除课程，并查看课程花名册。</li>
+            <li>可以新增、编辑、删除学生，并维护学生的已修课程。</li>
+        </ul>
+
+        <h2>本地演示账号</h2>
+        <p>开启演示数据后（<code>APP_DEMO_SEED=true</code>）可以使用：</p>
+        <div class="info-grid">
+            <div class="info-box">
+                <h3>学生</h3>
+                <p>账号：<code>20200001</code></p>
+                <p>密码：<code>123456</code></p>
+            </div>
+            <div class="info-box">
+                <h3>管理员</h3>
+                <p>账号：<code>admin</code></p>
+                <p>密码：<code>admin123</code></p>
+            </div>
+        </div>
+
+        <h2>技术栈</h2>
+        <p>新版：Spring Boot 3 + Thymeleaf + PostgreSQL + Spring Security。</p>
+        <p>原版：JSP + Servlet + JavaBean + JDBC + MySQL 8 + Tomcat 8。</p>
+    </section>
+</main>
+</body>
+</html>

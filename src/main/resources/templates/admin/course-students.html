@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>课程花名册 · 选课系统</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<nav th:replace="~{fragments/nav :: nav}"></nav>
+
+<main class="container">
+    <h1>选课花名册</h1>
+    <p class="subtitle">
+        <span th:text="${cno}">cno</span>
+        ·
+        <span th:text="${courseName}">课程名</span>
+        （共 <span th:text="${#lists.size(students)}">0</span> 人）
+    </p>
+
+    <p><a class="button" th:href="@{/admin/courses}">返回课程列表</a></p>
+
+    <p class="empty" th:if="${#lists.isEmpty(students)}">还没有学生选这门课。</p>
+
+    <div class="table-wrap" th:if="${!#lists.isEmpty(students)}">
+        <table>
+            <thead>
+            <tr>
+                <th>学号</th>
+                <th>姓名</th>
+                <th>年级</th>
+                <th>专业</th>
+                <th>学院</th>
+                <th>密保手机</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="s : ${students}">
+                <td th:text="${s.sno}">sno</td>
+                <td th:text="${s.name}">姓名</td>
+                <td th:text="${s.grade}">年级</td>
+                <td th:text="${s.major}">专业</td>
+                <td th:text="${s.college}">学院</td>
+                <td th:text="${s.phone}">手机</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

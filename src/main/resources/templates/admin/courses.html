@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>课程管理 · 选课系统</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<nav th:replace="~{fragments/nav :: nav}"></nav>
+
+<main class="container">
+    <h1>课程管理</h1>
+    <p class="subtitle">新增、编辑、停开/恢复、删除课程，并查看选课花名册。</p>
+
+    <div class="alert ok" th:if="${message}" th:text="${message}"></div>
+    <div class="alert error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+    <div class="toolbar">
+        <form class="search-form auto-search" th:action="@{/admin/courses}" method="get">
+            <input type="search" name="q" th:value="${q}"
+                   placeholder="输入即搜索：课程号 / 课程名 / 教师">
+            <span class="hint-inline">输入即搜索</span>
+            <button type="submit" class="visually-hidden">搜索</button>
+            <a class="button" th:href="@{/admin/courses}">重置</a>
+        </form>
+        <div class="toolbar-actions">
+            <a class="button" th:href="@{/admin/courses/import}">批量导入</a>
+            <a class="button primary" th:href="@{/admin/courses/new}">新增课程</a>
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+            <tr>
+                <th>课程号</th>
+                <th>课程名称</th>
+                <th>教师</th>
+                <th>先修课</th>
+                <th>上课时间</th>
+                <th>地点</th>
+                <th>容量</th>
+                <th>学分</th>
+                <th>已选</th>
+                <th>状态</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="c : ${courses}" th:classappend="${!c.active} ? 'inactive-row'">
+                <td th:text="${c.cno}">cno</td>
+                <td th:text="${c.name}">课程</td>
+                <td th:text="${c.teacher}">教师</td>
+                <td th:text="${c.prerequisiteText}">-</td>
+                <td th:text="${c.timeText}">时间</td>
+                <td th:text="${c.location}">地点</td>
+                <td th:text="${c.capacity}">0</td>
+                <td th:text="${c.credits}">2</td>
+                <td th:text="${c.selectedCount}">0</td>
+                <td>
+                    <span class="badge ok" th:if="${c.active}">开放</span>
+                    <span class="badge muted" th:if="${!c.active}">停开</span>
+                </td>
+                <td>
+                    <div class="actions">
+                        <a th:href="@{/admin/courses/{cno}/edit(cno=${c.cno})}">编辑</a>
+                        <a th:href="@{/admin/courses/{cno}/students(cno=${c.cno})}">花名册</a>
+                        <form th:action="@{/admin/courses/{cno}/toggle(cno=${c.cno})}"
+                              method="post" class="inline-form">
+                            <button type="submit" class="link-button-inline"
+                                    th:text="${c.active} ? '停开' : '恢复'">停开</button>
+                        </form>
+                        <form th:action="@{/admin/courses/{cno}/delete(cno=${c.cno})}"
+                              method="post" class="inline-form"
+                              onsubmit="return confirm('确定删除该课程？已被选课/已修引用的课程不能删除。');">
+                            <button type="submit" class="link-button-inline danger">删除</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(courses)}">
+                <td colspan="11" class="empty-cell">没有匹配的课程。</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination" th:if="${coursePage.totalItems > 0}">
+        <a class="page-link" th:if="${coursePage.hasPrevious}"
+           th:href="@{/admin/courses(page=${coursePage.page - 1}, q=${q})}">上一页</a>
+        <a class="page-link" th:each="n : ${coursePage.pageNumbers}"
+           th:classappend="${n == coursePage.page} ? 'active'"
+           th:href="@{/admin/courses(page=${n}, q=${q})}"
+           th:text="${n}">1</a>
+        <a class="page-link" th:if="${coursePage.hasNext}"
+           th:href="@{/admin/courses(page=${coursePage.page + 1}, q=${q})}">下一页</a>
+        <span class="page-info">
+            第 <span th:text="${coursePage.fromItem}">1</span>–<span th:text="${coursePage.toItem}">10</span> 条，
+            共 <strong th:text="${coursePage.totalItems}">0</strong> 门
+        </span>
+    </div>
+
+    <script th:src="@{/js/auto-search.js}" defer></script>
+</main>
+</body>
+</html>

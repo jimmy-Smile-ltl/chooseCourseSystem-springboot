@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${editing} ? '编辑课程 · 选课系统' : '新增课程 · 选课系统'">课程表单</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<nav th:replace="~{fragments/nav :: nav}"></nav>
+
+<main class="container">
+    <h1 th:text="${editing} ? '编辑课程' : '新增课程'">课程表单</h1>
+    <p class="subtitle">一个课程目前对应一个上课时段；先修课可以多选。</p>
+
+    <div class="alert error" th:if="${serviceErrors}">
+        <ul class="error-list">
+            <li th:each="error : ${serviceErrors}" th:text="${error}"></li>
+        </ul>
+    </div>
+    <form th:action="@{${formAction}}" method="post" th:object="${courseForm}" class="form-card">
+        <div class="alert error" th:if="${#fields.hasErrors()}">请检查表单中的错误。</div>
+        <div class="form-grid">
+            <label>
+                课程号
+                <input th:field="*{cno}" th:readonly="${editing}" placeholder="例如 CS101">
+                <span class="field-error" th:if="${#fields.hasErrors('cno')}" th:errors="*{cno}"></span>
+            </label>
+            <label>
+                课程名称
+                <input th:field="*{name}" placeholder="例如 数据结构">
+                <span class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></span>
+            </label>
+            <label>
+                授课教师
+                <input th:field="*{teacher}" placeholder="教师姓名">
+                <span class="field-error" th:if="${#fields.hasErrors('teacher')}" th:errors="*{teacher}"></span>
+            </label>
+            <label>
+                上课地点
+                <input th:field="*{location}" placeholder="例如 A-101">
+                <span class="field-error" th:if="${#fields.hasErrors('location')}" th:errors="*{location}"></span>
+            </label>
+            <label>
+                人数上限
+                <input type="number" min="0" th:field="*{capacity}">
+                <span class="field-error" th:if="${#fields.hasErrors('capacity')}" th:errors="*{capacity}"></span>
+            </label>
+            <label>
+                学分
+                <input type="number" min="0" max="12" th:field="*{credits}">
+                <span class="field-error" th:if="${#fields.hasErrors('credits')}" th:errors="*{credits}"></span>
+            </label>
+            <label>
+                上课星期
+                <select th:field="*{dayOfWeek}">
+                    <option th:each="d, stat : ${#numbers.sequence(1, 7)}"
+                            th:value="${d}" th:text="${dayNames[stat.index]}">周一</option>
+                </select>
+                <span class="field-error" th:if="${#fields.hasErrors('dayOfWeek')}" th:errors="*{dayOfWeek}"></span>
+            </label>
+            <label>
+                开始时间
+                <input type="time" th:field="*{startTime}">
+                <span class="field-error" th:if="${#fields.hasErrors('startTime')}" th:errors="*{startTime}"></span>
+            </label>
+            <label>
+                结束时间
+                <input type="time" th:field="*{endTime}">
+                <span class="field-error" th:if="${#fields.hasErrors('endTime')}" th:errors="*{endTime}"></span>
+            </label>
+        </div>
+
+        <label class="checkbox-row">
+            <input type="checkbox" th:field="*{active}">
+            开放选课
+        </label>
+
+        <label class="full-width">
+            先修课程
+            <select th:field="*{prerequisiteCnos}" multiple size="6" class="multi-select">
+                <option th:each="opt : ${courseOptions}"
+                        th:value="${opt.cno}"
+                        th:text="${opt.cno + ' · ' + opt.name}">课程</option>
+            </select>
+            <span class="hint-inline">可多选；留空表示没有先修课。</span>
+        </label>
+
+        <div class="form-actions">
+            <button type="submit" class="primary" th:text="${editing} ? '保存修改' : '创建课程'">提交</button>
+            <a class="button" th:href="@{/admin/courses}">取消</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

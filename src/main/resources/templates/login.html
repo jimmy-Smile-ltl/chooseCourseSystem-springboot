@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>欢迎登录选课系统</title>
+    <link rel="shortcut icon" th:href="@{/image/logo.png}" type="image/x-icon">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <link rel="stylesheet" th:href="@{/css/login.css}">
+    <link rel="stylesheet" th:href="@{/live2d/waifu.css}">
+    <link rel="stylesheet" th:href="@{/css/fx.css}">
+</head>
+<body class="login-page">
+<video class="login-video" autoplay muted loop playsinline
+       preload="metadata" th:poster="@{/image/login-poster.jpg}">
+    <source th:src="@{/video/index.mp4}" type="video/mp4">
+    你的浏览器不支持 video 标签。
+</video>
+<div class="login-scrim"></div>
+<div class="login-aura" aria-hidden="true"></div>
+
+<main class="login-body">
+    <div class="logintop">
+        欢迎登录选课系统
+        <a th:href="@{/help}" title="帮助">
+            <img class="help-icon" th:src="@{/image/Help.png}" alt="帮助">
+        </a>
+    </div>
+    <p class="login-subtitle">✧ 学生 / 管理员统一登录 · 契约者，欢迎回来 ✧</p>
+
+    <div class="demo-hint" th:if="${demoLogin}">
+        演示模式：账号 / 密码 / 验证码已自动填充，直接点击“提交”即可
+    </div>
+
+    <div class="alert error" th:if="${error}" th:text="${error}"></div>
+    <div class="alert ok" th:if="${message}" th:text="${message}"></div>
+
+    <form th:action="@{/login}" method="post" class="login-form">
+        <div class="tr">
+            <span>账号</span>
+            <input type="text" name="Id" autocomplete="username" required autofocus
+                   th:value="${demoId}" placeholder="学号 / 管理员 ID">
+        </div>
+        <div class="tr">
+            <span>密码</span>
+            <input type="password" name="Pwd" autocomplete="current-password" required
+                   th:value="${demoPwd}" placeholder="密码">
+        </div>
+        <div class="tr">
+            <span>验证码</span>
+            <div class="captcha-row">
+                <input id="yzm" type="text" name="captcha" maxlength="4" autocomplete="off"
+                       required placeholder="4 位验证码">
+                <img class="captcha-img" th:src="@{/captcha}" alt="验证码" title="点击刷新"
+                     onclick="this.src=this.src.split('?')[0]+'?t='+Date.now()">
+            </div>
+        </div>
+        <div class="buttons">
+            <button type="submit" class="submit">提交</button>
+            <button type="reset" class="reset">重置</button>
+        </div>
+    </form>
+
+    <div class="links">
+        <a th:href="@{/about}">关于</a>
+        <a th:href="@{/forgot-password}">忘记密码？</a>
+    </div>
+</main>
+
+<div class="copyright">
+    ©all copyright reserved · 仅供课程演示与学习使用
+</div>
+
+<script th:if="${demoLogin}">
+    (function () {
+        var form = document.querySelector('form.login-form');
+        if (!form) {
+            return;
+        }
+        var idInput = form.querySelector('input[name="Id"]');
+        var pwdInput = form.querySelector('input[name="Pwd"]');
+        var captchaInput = form.querySelector('input[name="captcha"]');
+        var captchaImg = form.querySelector('.captcha-img');
+
+        if (idInput && !idInput.value) {
+            idInput.value = '20200001';
+        }
+        if (pwdInput && !pwdInput.value) {
+            pwdInput.value = '123456';
+        }
+
+        function applySvg(svg) {
+            var chars = (svg.match(/<text[^>]*>([^<])<\/text>/g) || []).map(function (tag) {
+                return tag.replace(/<[^>]*>/g, '');
+            }).join('');
+            if (captchaInput) {
+                captchaInput.value = chars;
+            }
+            if (captchaImg) {
+                captchaImg.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+            }
+        }
+
+        function fillCaptcha() {
+            fetch('/captcha', { cache: 'no-store' })
+                .then(function (response) { return response.text(); })
+                .then(applySvg)
+                .catch(function () {});
+        }
+
+        if (captchaImg) {
+            captchaImg.onclick = null;
+            captchaImg.addEventListener('click', function (event) {
+                event.preventDefault();
+                fillCaptcha();
+            });
+        }
+        fillCaptcha();
+    })();
+</script>
+
+<script th:src="@{/live2d/live2d.min.js}"></script>
+<script th:src="@{/live2d/waifu-tips.js}"></script>
+<script>
+    (function () {
+        if (window.innerWidth < 768 || typeof window.initWidget !== 'function') {
+            return;
+        }
+        window.initWidget({
+            waifuPath: '/live2d/waifu-tips.json',
+            cdnPath: 'https://cdn.jsdelivr.net/gh/alink/live2d-widget@master/',
+            tools: ['switch-model', 'switch-texture', 'photo', 'info', 'quit']
+        });
+        setTimeout(function () {
+            var toggle = document.getElementById('waifu-toggle');
+            if (toggle) {
+                toggle.click();
+            }
+        }, 900);
+    })();
+</script>
+<script th:src="@{/js/fx.js}"></script>
+</body>
+</html>
