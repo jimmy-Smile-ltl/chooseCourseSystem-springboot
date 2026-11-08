@@ -34,6 +34,9 @@ build/
 
 ### Local secrets / Python ###
 .env
+.env.local
+.neon/
+node_modules/
 .venv/
 __pycache__/
 *.pyc
