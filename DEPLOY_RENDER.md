@@ -39,7 +39,9 @@ Render 会自动分配 `https://<服务名>.onrender.com` 的 HTTPS 地址。
 ## 1. 创建 Neon 数据库
 
 1. 登录 [Neon](https://neon.tech)，创建 Project。
-2. Region 选择 **Singapore / ap-southeast-1**。
+2. Region 选与 Render 相同的区域：
+   - Render Singapore → Neon **Singapore / ap-southeast-1**
+   - Render Ohio → Neon **US East (Ohio) / us-east-2**
 3. 数据库使用默认的 `neondb` 即可。
 4. 在 Connection Details 复制连接串，例如：
 
@@ -58,6 +60,14 @@ Flyway 用 **direct** 连接，把主机名里的 `-pooler` 去掉：
 ```text
 jdbc:postgresql://ep-xxxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
 ```
+
+注意：
+
+- Neon 主机名里的 `us-east-2` = Ohio，`ap-southeast-1` = Singapore
+- 应用和数据库尽量同区域；一个 Ohio、一个 Singapore 会增加每次查询延迟
+- Neon 复制出的 URI 可能带 `channel_binding=require`，这是 libpq 参数；
+  JDBC 基本部署保留 `sslmode=require` 即可
+- **真实连接串包含数据库密码，只能放在环境变量里，不要写进 README、聊天或 Git**
 
 记下：
 
@@ -83,7 +93,7 @@ jimmy-Smile-ltl/chooseCourseSystem-springboot
 | 项目 | 填写 |
 |---|---|
 | Name | `choose-course-demo`（可自定义，需全局唯一） |
-| Region | **Singapore** |
+| Region | 与 Neon 相同（Singapore 或 Ohio） |
 | Branch | `main` |
 | Root Directory | 留空（仓库根目录就是应用） |
 | Runtime | **Docker** |
@@ -137,6 +147,7 @@ APP_PAGE_SIZE=20
 - **不要设置 `PORT`**：Render 会自动注入，应用使用 `${PORT:8080}`
 - **不要设置 `APP_DEMO_SEED` / `APP_DEMO_LOGIN`**：生产环境会拒绝启动
 - Neon 密码不要拼进 `DATABASE_URL`，分别放在 `DB_PASSWORD`
+- 真实连接串不要提交到 Git；一旦粘贴到公开位置，立即在 Neon 控制台重置密码
 - 如果 Flyway 在 pooled 连接下报错，确认 `SPRING_FLYWAY_URL` 是 direct 地址
 - `SPRING_FLYWAY_USER` / `SPRING_FLYWAY_PASSWORD` 与 DB 用户一致时也可以省略
 
