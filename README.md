@@ -6,6 +6,13 @@
 这个目录是重写版：**Spring Boot 3 + Thymeleaf + PostgreSQL（Neon）+ Docker**。
 旧项目根目录保持不变，便于对照。
 
+> **在线演示：** <https://choosecoursesystem-springboot.onrender.com/login>  
+> Render 免费实例 15 分钟无访问会休眠，首次打开约 30–60 秒冷启动。
+
+它最早是一个 Java Web 课程作业（JSP + Servlet + JDBC + MySQL）。后来补前端和
+Canvas 时，登录页、选课清单、课表被重新做了一遍，最终保留业务重写为
+Spring Boot + PostgreSQL。
+
 ---
 
 ## 技术栈
@@ -18,7 +25,7 @@
 | 数据访问 | `JdbcTemplate` 显式 SQL（选课事务、复合键、聚合查询更直观） |
 | 数据库 | PostgreSQL 16+（Neon） |
 | 迁移 | Flyway |
-| 部署 | Docker → Zeabur / Railway / Render / Fly.io |
+| 部署 | Docker → Render（当前免费实例）/ Zeabur / Railway / Fly.io |
 
 > Vercel 不能运行 Spring Boot/Tomcat/Java Web 容器。
 > 如果一定要用 Vercel，只能把前端拆出去（Next.js/Nuxt），Java API 仍要部署到上面这些容器平台。
@@ -52,9 +59,10 @@
 - 管理员批量导入课程：CSV 模板、UTF-8/格式/业务校验、错误行号报告、整批事务回滚
 - 管理员学生 CRUD、搜索、学生已选课程
 - Flyway schema、Dockerfile、旧数据 ETL 脚本
+- Render + Neon 在线演示（免费实例；数据库由 Neon 托管）
 
 待实现：
-- Neon 真实库部署 + 旧 MySQL 数据迁移演练（需要 Neon/线上 MySQL 凭据）
+- 旧 MySQL 数据迁移演练（需要完整的线上 MySQL dump）
 - 管理员学生列表服务端分页（课程列表已分页）
 - 多实例部署时的 Redis/数据库限流
 - 管理员编辑多上课时段课程（当前编辑页编辑第一个时段，schema 已支持多时段）
@@ -125,12 +133,15 @@ mvnw.cmd spring-boot:run
 APP_DEMO_SEED=true APP_DEMO_LOGIN=true ./mvnw spring-boot:run
 ```
 
-演示账号：
+执行过演示种子后可用以下账号：
 
 | 角色 | 账号 | 密码 |
 |---|---|---|
 | 学生 | `20200001` | `123456` |
 | 管理员 | `admin` | `admin123` |
+
+> 线上部署如果还没有执行演示种子，Neon 数据库会是空库，需要先在本地连接 Neon
+> 写入一次，或通过管理员导入真实数据。
 
 - `APP_DEMO_SEED=true`：写入演示学生、管理员，并幂等补齐 33 门演示课程。
 - `APP_DEMO_LOGIN=true`：登录页自动填充学生账号、密码和验证码，直接点提交即可。
