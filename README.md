@@ -40,7 +40,8 @@ Spring Boot + PostgreSQL。
 - 登录/忘记密码页加入鼠标跟随粒子网络、浅色连线、点击粒子爆发与中二漂浮文字
 - Live2D 看板娘（本地 `waifu.css`/`waifu-tips.js` + jsDelivr 模型）
 - 登录/忘记密码服务端 SVG 验证码 + 单实例 IP 限流（15 次 / 5 分钟）
-- `prod` profile 下检测到演示开关会拒绝启动，避免生产暴露演示账号
+- `prod` profile 下检测到演示开关会拒绝启动；公开作品演示必须显式设置
+  `APP_DEMO_PUBLIC=true` 才允许
 - 忘记密码（账号 + 密保手机 + 验证码，BCrypt 重置）
 - 学生课程列表：服务端分页（默认 20 门/页）、输入即搜索（防抖/兼容中文输入法）、
   只看有空位/只看无冲突
@@ -78,7 +79,7 @@ Spring Boot + PostgreSQL。
 cd server
 
 # Windows
-mvnw.cmd test          # 44 个测试，含嵌入式 PostgreSQL 集成/E2E/并发抢课
+mvnw.cmd test          # 45 个测试，含嵌入式 PostgreSQL 集成/E2E/并发抢课
 mvnw.cmd spring-boot:run
 
 # macOS / Linux
@@ -92,7 +93,7 @@ mvnw.cmd spring-boot:run
   首次运行会下载 Windows/Linux 的 PostgreSQL 二进制到临时目录。
 - `LoginPageTest`、`AdminPageTest`、`StudentCoursePageTest` 使用 H2 做 Web 冒烟；
   真实 schema 和 SQL 由嵌入式 PostgreSQL 测试覆盖。
-- 当前 44 个测试全部通过：Flyway schema、accounts 视图、登录、验证码/限流、权限隔离、
+- 当前 45 个测试全部通过：Flyway schema、accounts 视图、登录、验证码/限流、权限隔离、
   管理员页面、学生课程页/服务端分页、课表色块/冲突、ICS 导出、选课事务（先修/冲突/
   容量/重复/退课重选/学分上限）、CSV 解析与导入校验/事务导入、演示种子幂等性、
   管理端课程/学生 CRUD、学生改密/改手机、忘记密码重置、并发抢最后一个名额、
@@ -145,7 +146,19 @@ APP_DEMO_SEED=true APP_DEMO_LOGIN=true ./mvnw spring-boot:run
 
 - `APP_DEMO_SEED=true`：写入演示学生、管理员，并幂等补齐 33 门演示课程。
 - `APP_DEMO_LOGIN=true`：登录页自动填充学生账号、密码和验证码，直接点提交即可。
-- **这两个开关只用于本地/演示，生产环境不要开启**；尤其是 `APP_DEMO_LOGIN` 会把演示凭据放进页面。
+- `APP_DEMO_PUBLIC=true`：显式允许在 `prod` profile 下运行公开演示。
+- **正式生产不要开启演示开关**；它们会把演示凭据放进页面。
+- **公开作品演示**需要同时设置：
+
+```env
+APP_DEMO_PUBLIC=true
+APP_DEMO_SEED=true
+APP_DEMO_LOGIN=true
+```
+
+保留 `SPRING_PROFILES_ACTIVE=prod` 即可。首次启动且数据库没有学生/管理员时，
+会自动写入演示账号和课程。注意公开演示意味着访客可以修改数据，尤其是
+`admin/admin123`；展示结束后建议关闭演示开关、修改管理员密码或重置数据。
 
 演示课程共 33 门，覆盖专业课、数学/英语公共课、经管/通识/体育课：
 

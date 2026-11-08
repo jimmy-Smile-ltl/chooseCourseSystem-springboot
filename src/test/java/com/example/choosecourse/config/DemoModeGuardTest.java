@@ -8,13 +8,20 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class DemoModeGuardTest {
 
     @Test
-    void failsWhenDemoModeIsEnabled() {
-        assertThrows(IllegalStateException.class, () -> new DemoModeGuard(true, false).run(null));
-        assertThrows(IllegalStateException.class, () -> new DemoModeGuard(false, true).run(null));
+    void failsWhenDemoModeIsEnabledWithoutPublicConfirmation() {
+        assertThrows(IllegalStateException.class,
+                () -> new DemoModeGuard(true, false, false).run(null));
+        assertThrows(IllegalStateException.class,
+                () -> new DemoModeGuard(false, true, false).run(null));
+    }
+
+    @Test
+    void passesWhenPublicDemoIsExplicitlyEnabled() {
+        assertDoesNotThrow(() -> new DemoModeGuard(true, true, true).run(null));
     }
 
     @Test
     void passesWhenDemoModeIsDisabled() {
-        assertDoesNotThrow(() -> new DemoModeGuard(false, false).run(null));
+        assertDoesNotThrow(() -> new DemoModeGuard(false, false, false).run(null));
     }
 }

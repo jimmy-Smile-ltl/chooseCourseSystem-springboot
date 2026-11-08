@@ -10,7 +10,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * 生产 profile 下的最后一道保险：
- * 一旦开启演示种子或演示登录预填，直接拒绝启动，避免把演示账号和密码暴露到生产页面。
+ * 默认禁止演示种子/演示登录预填，避免把演示账号和密码暴露到生产页面。
+ * 公开作品演示必须额外设置 APP_DEMO_PUBLIC=true 显式确认。
  */
 @Component
 @Profile("prod")
@@ -20,19 +21,27 @@ public class DemoModeGuard implements ApplicationRunner {
 
     private final boolean demoSeed;
     private final boolean demoLogin;
+    private final boolean demoPublic;
 
     public DemoModeGuard(@Value("${app.demo-seed:false}") boolean demoSeed,
-                         @Value("${app.demo-login:false}") boolean demoLogin) {
+                         @Value("${app.demo-login:false}") boolean demoLogin,
+                         @Value("${app.demo-public:false}") boolean demoPublic) {
         this.demoSeed = demoSeed;
         this.demoLogin = demoLogin;
+        this.demoPublic = demoPublic;
     }
 
     @Override
     public void run(ApplicationArguments args) {
-        if (demoSeed || demoLogin) {
+        if ((demoSeed || demoLogin) && !demoPublic) {
             throw new IllegalStateException(
-                    "生产环境禁止开启 APP_DEMO_SEED / APP_DEMO_LOGIN；请关闭演示开关后重启。");
+                    "生产环境禁止开启 APP_DEMO_SEED / APP_DEMO_LOGIN；"
+                            + "如果是公开作品演示，请额外设置 APP_DEMO_PUBLIC=true。");
         }
-        log.info("生产安全检查通过：演示模式已关闭");
+        if (demoPublic && (demoSeed || demoLogin)) {
+            log.warn("公开演示模式已开启：登录页会自动填充演示账号，访客可修改演示数据。");
+        } else {
+            log.info("生产安全检查通过：演示模式已关闭");
+        }
     }
 }

@@ -4,6 +4,8 @@ app:
   # 本地/演示环境：登录页自动填充 20200001/123456 + 验证码
   # 生产环境不要开启
   demo-login: ${APP_DEMO_LOGIN:false}
+  # 显式允许在 prod profile 下运行公开演示（会暴露演示账号）
+  demo-public: ${APP_DEMO_PUBLIC:false}
   # 每学期可选学分上限
   max-credits: ${APP_MAX_CREDITS:30}
   # 学分目标：累计达到后在选课页触发礼炮特效

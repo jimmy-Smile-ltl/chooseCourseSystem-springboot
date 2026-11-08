@@ -145,13 +145,40 @@ APP_PAGE_SIZE=20
 注意：
 
 - **不要设置 `PORT`**：Render 会自动注入，应用使用 `${PORT:8080}`
-- **不要设置 `APP_DEMO_SEED` / `APP_DEMO_LOGIN`**：生产环境会拒绝启动
+- **正式生产**不要设置 `APP_DEMO_SEED` / `APP_DEMO_LOGIN`
+- 公开作品演示见下方“公开演示模式”
 - Neon 密码不要拼进 `DATABASE_URL`，分别放在 `DB_PASSWORD`
 - 真实连接串不要提交到 Git；一旦粘贴到公开位置，立即在 Neon 控制台重置密码
 - 如果 Flyway 在 pooled 连接下报错，确认 `SPRING_FLYWAY_URL` 是 direct 地址
 - `SPRING_FLYWAY_USER` / `SPRING_FLYWAY_PASSWORD` 与 DB 用户一致时也可以省略
 
 保存后 Render 会自动开始部署。
+
+### 公开演示模式（作品展示）
+
+如果希望陌生访客打开登录页就能直接体验，保留 `SPRING_PROFILES_ACTIVE=prod`，
+再增加这三个变量：
+
+```env
+APP_DEMO_PUBLIC=true
+APP_DEMO_SEED=true
+APP_DEMO_LOGIN=true
+```
+
+效果：
+
+- 登录页自动填充学生账号 `20200001`、密码 `123456` 和验证码
+- 首次启动且数据库为空时，自动写入演示学生、管理员和演示课程
+- 日志会提示“公开演示模式已开启”
+
+注意：
+
+- `APP_DEMO_PUBLIC=true` 是显式确认，缺少它时生产环境会拒绝启动
+- 访客可以看到并使用演示账号，也可以修改演示数据
+- 演示管理员 `admin/admin123` 同样存在；公开部署建议展示结束后修改密码或重置数据
+- 展示结束后，删除这三个变量并重新部署即可关闭演示模式
+
+如果只希望访客体验学生端，可以不公开管理员密码，只依赖登录页自动填充的学生账号。
 
 ---
 
@@ -294,7 +321,7 @@ Render → 服务 → **Deploys** → 选择历史部署 → **Redeploy**。
 | 部署失败，Healthcheck failed | 看 Logs；确认启动完成、`/actuator/health` 可访问 |
 | 502 / 服务不可用 | 等待冷启动；或查看应用是否因数据库连接失败退出 |
 | Flyway 在 pooler 报错 | `SPRING_FLYWAY_URL` 改 direct 连接串 |
-| 启动时报演示开关错误 | 删除 `APP_DEMO_SEED` / `APP_DEMO_LOGIN` |
+| 启动时报演示开关错误 | 正式生产删除 `APP_DEMO_SEED` / `APP_DEMO_LOGIN`；公开演示需加 `APP_DEMO_PUBLIC=true` |
 | `OutOfMemoryError` / 容器重启 | 512MB 不够；升级付费实例，或改用 Oracle Cloud Always Free |
 | 数据库 SSL 错误 | JDBC URL 必须带 `sslmode=require` |
 | 首次请求很慢 | 免费实例休眠后冷启动，属正常现象 |
@@ -310,7 +337,8 @@ Render → 服务 → **Deploys** → 选择历史部署 → **Redeploy**。
 - [ ] Instance Type 为 Free
 - [ ] 健康检查路径 `/actuator/health`
 - [ ] `SPRING_PROFILES_ACTIVE=prod`
-- [ ] 没有设置演示种子/演示登录开关
+- [ ] 正式生产没有设置演示种子/演示登录开关
+- [ ] 如果公开演示，已设置 `APP_DEMO_PUBLIC=true` 并接受访客可修改数据
 - [ ] Neon pooled/direct URL 都配置正确
 - [ ] 首次部署日志显示应用启动成功
 - [ ] `/actuator/health` 返回 `UP`
