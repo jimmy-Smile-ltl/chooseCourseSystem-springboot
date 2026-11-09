@@ -1,21 +1,30 @@
 package com.example.choosecourse.config;
 
+import com.example.choosecourse.service.CourseCsvParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalTime;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 本地演示数据。默认关闭，设置 APP_DEMO_SEED=true 开启。
  * 账号：只在 students 和 admins 都为空时写入，避免覆盖真实迁移数据。
- * 课程：按 cno 幂等补齐，已有课程（可能是真实数据）不会被修改或追加时段。
+ * 课程：读取 classpath:demo-courses.csv，按 cno 执行“存在则更新、不存在则插入”，
+ *       并同步刷新上课时段和先修关系，方便演示库随着课程目录升级。
  *
  * 演示账号：
  *   学生 20200001 / 123456
@@ -26,23 +35,29 @@ import java.time.LocalTime;
 public class DemoDataSeeder implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DemoDataSeeder.class);
+    private static final String CATALOG = "demo-courses.csv";
+    private static final int MIN_COURSES = 100;
 
     private final JdbcTemplate jdbc;
     private final PasswordEncoder passwordEncoder;
+    private final CourseCsvParser courseCsvParser;
 
-    public DemoDataSeeder(JdbcTemplate jdbc, PasswordEncoder passwordEncoder) {
+    public DemoDataSeeder(JdbcTemplate jdbc, PasswordEncoder passwordEncoder,
+                          CourseCsvParser courseCsvParser) {
         this.jdbc = jdbc;
         this.passwordEncoder = passwordEncoder;
+        this.courseCsvParser = courseCsvParser;
     }
 
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
         boolean accountsSeeded = seedAccounts();
-        int coursesAdded = seedCourses();
+        SeedStats stats = seedCourses();
 
-        log.info("演示数据就绪：新增 {} 门课程；账号{}",
-                coursesAdded, accountsSeeded ? "已写入（20200001/123456, admin/admin123）" : "沿用现有");
+        log.info("演示数据就绪：课程新增 {} 门、更新 {} 门；账号{}",
+                stats.inserted(), stats.updated(),
+                accountsSeeded ? "已写入（20200001/123456, admin/admin123）" : "沿用现有");
     }
 
     private boolean seedAccounts() {
@@ -66,86 +81,70 @@ public class DemoDataSeeder implements ApplicationRunner {
     }
 
     /**
-     * 33 门演示课程，覆盖专业课、公共基础课、通识课和体育课；
-     * 部分课程一周两次（m001/m003/l001），用来展示跨时段课表。
+     * 演示课程目录由 CSV 统一维护：
+     * 1. 先写课程主表，已存在则更新名称、教师、地点、容量、学分和开放状态；
+     * 2. 每门课的上课时间整体替换，保证目录调整后课表同步；
+     * 3. 全部课程落库后再写先修关系，避免前向引用触发外键错误。
      */
-    private int seedCourses() {
-        int added = 0;
+    private SeedStats seedCourses() {
+        List<CourseCsvParser.ImportCourse> catalog = loadCatalog();
+        Set<String> existingCnos = new HashSet<>(
+                jdbc.queryForList("select cno from courses", String.class));
 
-        // 已修课程，用来展示“已修”状态
-        added += insertCourse("c000", "程序设计基础", "何老师", "A100", 80, 3, null,
-                s(2, "08:30", "10:10"));
+        List<Object[]> courseArgs = new ArrayList<>(catalog.size());
+        int inserted = 0;
+        int updated = 0;
+        for (CourseCsvParser.ImportCourse course : catalog) {
+            courseArgs.add(new Object[]{
+                    course.cno(), course.name(), course.teacher(), course.location(),
+                    course.capacity(), course.credits(), course.active()});
+            if (existingCnos.contains(course.cno())) {
+                updated++;
+            } else {
+                inserted++;
+            }
+        }
+        jdbc.batchUpdate("""
+                insert into courses (cno, name, teacher, location, capacity, credits, is_active)
+                values (?, ?, ?, ?, ?, ?, ?)
+                on conflict (cno) do update set
+                    name = excluded.name,
+                    teacher = excluded.teacher,
+                    location = excluded.location,
+                    capacity = excluded.capacity,
+                    credits = excluded.credits,
+                    is_active = excluded.is_active
+                """, courseArgs);
 
-        added += insertCourse("t001", "数据结构", "张老师", "A101", 60, 4, null,
-                s(1, "08:30", "10:10"));
-        added += insertCourse("t002", "操作系统", "李老师", "B202", 45, 4, "t001",
-                s(2, "10:20", "12:00"));
-        added += insertCourse("t003", "Web 应用开发", "王老师", "C303", 40, 3, null,
-                s(3, "13:00", "15:35"));
-        added += insertCourse("t004", "计算机网络", "周老师", "B404", 50, 3, null,
-                s(1, "09:25", "11:05"));
-        added += insertCourse("t005", "数据库系统", "刘老师", "A102", 50, 3, "t001",
-                s(3, "08:30", "10:10"));
-        added += insertCourse("t006", "计算机组成原理", "孙老师", "B203", 55, 4, "c000",
-                s(4, "10:20", "12:00"));
-        added += insertCourse("t007", "软件工程", "郑老师", "C304", 45, 3, null,
-                s(5, "08:30", "10:10"));
-        added += insertCourse("t008", "人工智能导论", "吴老师", "A201", 40, 3, "c000",
-                s(2, "13:00", "15:35"));
-        added += insertCourse("t009", "机器学习", "冯老师", "A202", 35, 3, "t008",
-                s(5, "10:20", "12:00"));
-        added += insertCourse("t010", "算法设计与分析", "陈老师", "B301", 50, 3, "t001",
-                s(4, "13:00", "15:35"));
-        added += insertCourse("t011", "离散数学", "蒋老师", "B302", 60, 3, null,
-                s(1, "13:00", "15:35"));
-        added += insertCourse("t012", "编译原理", "沈老师", "B305", 40, 3, "t001",
-                s(3, "10:20", "12:00"));
-        added += insertCourse("t013", "网络安全基础", "韩老师", "C305", 45, 3, null,
-                s(5, "13:00", "15:35"));
-        added += insertCourse("t014", "移动应用开发", "杨老师", "C306", 40, 2, null,
-                s(2, "15:45", "17:25"));
+        List<Object[]> cnoArgs = catalog.stream()
+                .map(course -> new Object[]{course.cno()})
+                .toList();
+        jdbc.batchUpdate("delete from course_sessions where cno = ?", cnoArgs);
 
-        added += insertCourse("m001", "高等数学（一）", "罗老师", "A301", 100, 5, null,
-                s(2, "08:30", "10:10"), s(4, "08:30", "10:10"));
-        added += insertCourse("m002", "线性代数", "马老师", "A302", 80, 3, null,
-                s(3, "13:00", "15:35"));
-        added += insertCourse("m003", "大学物理（上）", "高老师", "B401", 90, 4, null,
-                s(1, "10:20", "12:00"), s(5, "10:20", "12:00"));
-        added += insertCourse("m004", "概率论与数理统计", "顾老师", "A303", 70, 3, "m001",
-                s(4, "15:45", "17:25"));
+        List<Object[]> sessionArgs = new ArrayList<>();
+        for (CourseCsvParser.ImportCourse course : catalog) {
+            for (CourseCsvParser.Session session : course.sessions()) {
+                sessionArgs.add(new Object[]{
+                        course.cno(), session.dayOfWeek(), session.start(), session.end()});
+            }
+        }
+        jdbc.batchUpdate("""
+                insert into course_sessions (cno, day_of_week, start_time, end_time)
+                values (?, ?, ?, ?)
+                """, sessionArgs);
 
-        added += insertCourse("l001", "大学英语（三）", "林老师", "D101", 45, 3, null,
-                s(1, "08:30", "10:10"), s(3, "08:30", "10:10"));
-        added += insertCourse("l002", "学术英语写作", "唐老师", "D102", 30, 2, null,
-                s(2, "18:30", "20:10"));
-        added += insertCourse("l003", "中国近现代史纲要", "邓老师", "F101", 120, 2, null,
-                s(3, "18:30", "21:05"));
-        added += insertCourse("l004", "心理学导论", "苏老师", "F102", 80, 2, null,
-                s(4, "19:25", "21:05"));
-        added += insertCourse("l005", "创新创业基础", "曾老师", "F103", 60, 2, null,
-                s(6, "13:00", "15:35"));
+        jdbc.batchUpdate("delete from course_prerequisites where cno = ?", cnoArgs);
 
-        added += insertCourse("e001", "微观经济学", "黄老师", "E101", 80, 3, null,
-                s(3, "15:45", "17:25"));
-        added += insertCourse("e002", "金融学基础", "钱老师", "E102", 60, 3, null,
-                s(5, "18:30", "21:05"));
-
-        added += insertCourse("a001", "音乐鉴赏", "宋老师", "艺术楼101", 120, 1, null,
-                s(2, "19:25", "21:05"));
-        added += insertCourse("a002", "影视艺术赏析", "秦老师", "艺术楼102", 100, 1, null,
-                s(4, "18:30", "21:05"));
-
-        added += insertCourse("pe001", "篮球", "赵老师", "体育馆", 30, 1, null,
-                s(5, "15:45", "17:25"));
-        added += insertCourse("pe002", "羽毛球", "许老师", "体育馆", 24, 1, null,
-                s(6, "08:30", "10:10"));
-        added += insertCourse("pe003", "太极拳", "武老师", "体育馆", 40, 1, null,
-                s(6, "10:20", "12:00"));
-
-        added += insertCourse("hs001", "大学生心理健康", "陈老师", "E-501", 200, 2, null,
-                s(4, "18:30", "21:05"));
-        added += insertCourse("h001", "急救常识", "曹老师", "校医院201", 60, 1, null,
-                s(7, "08:30", "10:10"));
+        List<Object[]> prerequisiteArgs = new ArrayList<>();
+        for (CourseCsvParser.ImportCourse course : catalog) {
+            for (String prerequisite : course.prerequisiteCnos()) {
+                prerequisiteArgs.add(new Object[]{course.cno(), prerequisite});
+            }
+        }
+        jdbc.batchUpdate("""
+                insert into course_prerequisites (cno, prerequisite_cno)
+                values (?, ?)
+                """, prerequisiteArgs);
 
         Boolean demoStudentExists = jdbc.queryForObject(
                 "select exists (select 1 from students where sno = ?)", Boolean.class, "20200001");
@@ -156,44 +155,29 @@ public class DemoDataSeeder implements ApplicationRunner {
                     on conflict do nothing
                     """, "20200001", "c000");
         }
-        return added;
+        return new SeedStats(inserted, updated);
     }
 
-    /**
-     * 幂等插入：课程已存在时直接跳过，不修改真实课程，也不追加时段。
-     */
-    private int insertCourse(String cno, String name, String teacher, String location,
-                             int capacity, int credits, String prerequisiteCno,
-                             Session... sessions) {
-        int inserted = jdbc.update("""
-                insert into courses (cno, name, teacher, location, capacity, credits, is_active)
-                values (?, ?, ?, ?, ?, ?, true)
-                on conflict (cno) do nothing
-                """, cno, name, teacher, location, capacity, credits);
-        if (inserted == 0) {
-            return 0;
+    private List<CourseCsvParser.ImportCourse> loadCatalog() {
+        ClassPathResource resource = new ClassPathResource(CATALOG);
+        try (InputStream input = resource.getInputStream()) {
+            CourseCsvParser.ParseResult parsed = courseCsvParser.parse(input.readAllBytes());
+            if (!parsed.errors().isEmpty()) {
+                String details = parsed.errors().stream().limit(5)
+                        .map(error -> "第 " + error.getLine() + " 行：" + error.getMessage())
+                        .collect(Collectors.joining("；"));
+                throw new IllegalStateException("演示课程目录校验失败：" + details);
+            }
+            if (parsed.courses().size() < MIN_COURSES) {
+                throw new IllegalStateException("演示课程目录至少需要 " + MIN_COURSES
+                        + " 门课程，当前 " + parsed.courses().size() + " 门");
+            }
+            return parsed.courses();
+        } catch (IOException e) {
+            throw new IllegalStateException("无法读取演示课程目录 " + CATALOG, e);
         }
-        for (Session session : sessions) {
-            jdbc.update("""
-                    insert into course_sessions (cno, day_of_week, start_time, end_time)
-                    values (?, ?, ?, ?)
-                    on conflict (cno, day_of_week, start_time) do nothing
-                    """, cno, session.dayOfWeek(), session.start(), session.end());
-        }
-        if (prerequisiteCno != null) {
-            jdbc.update("""
-                    insert into course_prerequisites (cno, prerequisite_cno)
-                    values (?, ?)
-                    on conflict do nothing
-                    """, cno, prerequisiteCno);
-        }
-        return 1;
     }
 
-    private static Session s(int dayOfWeek, String start, String end) {
-        return new Session(dayOfWeek, LocalTime.parse(start), LocalTime.parse(end));
-    }
-
-    private record Session(int dayOfWeek, LocalTime start, LocalTime end) {
+    private record SeedStats(int inserted, int updated) {
     }
 }
