@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="flash"
+     th:if="${message != null or (results != null and !#lists.isEmpty(results))}">
+    <div class="alert ok" th:if="${results != null and !#lists.isEmpty(results)}">
+        <div class="result-lines">
+            <th:block th:each="r : ${results}">
+                <span class="result-cno" th:text="${r.cno}">a002</span>
+                <span class="result-msg" th:classappend="${r.success} ? '' : 'muted'"
+                      th:text="${r.message}">选课成功</span>
+            </th:block>
+        </div>
+    </div>
+    <div class="alert ok"
+         th:if="${(results == null or #lists.isEmpty(results)) and message != null and message != ''}"
+         th:text="${message}"></div>
+</div>
+</body>
+</html>

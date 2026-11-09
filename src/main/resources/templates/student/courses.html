@@ -15,7 +15,7 @@
         先修、余量、时间冲突会在提交前预检；勾选课程可以实时看到预计学分。
     </p>
 
-    <div class="alert ok" th:if="${message}" th:text="${message}"></div>
+    <div th:replace="~{fragments/flash :: flash}"></div>
 
     <form class="course-toolbar auto-search" th:action="@{/student/courses}" method="get">
         <input id="course-search" type="search" name="q" th:value="${q}"

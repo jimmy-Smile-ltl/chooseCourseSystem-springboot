@@ -152,6 +152,25 @@ h2 {
     color: var(--ok);
 }
 
+/* 批量选课/退课结果：课程号一列、结果一列，自动按最长课程号对齐 */
+.result-lines {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 16px;
+    align-items: baseline;
+    white-space: normal;
+}
+
+.result-cno {
+    font-family: ui-monospace, SFMono-Regular, Consolas, "Courier New", monospace;
+    font-weight: 600;
+    letter-spacing: .02em;
+}
+
+.result-msg.muted {
+    color: #64748b;
+}
+
 .table-wrap {
     overflow-x: auto;
     border: 1px solid var(--line);

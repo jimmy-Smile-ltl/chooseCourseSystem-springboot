@@ -4,6 +4,7 @@ import com.example.choosecourse.service.CourseQueryService;
 import com.example.choosecourse.service.EnrollmentService;
 import com.example.choosecourse.service.RecommendationService;
 import com.example.choosecourse.service.StudentQueryService;
+import com.example.choosecourse.web.dto.CourseActionResult;
 import com.example.choosecourse.web.dto.CourseRow;
 import com.example.choosecourse.web.dto.EnrollmentOutcome;
 import com.example.choosecourse.web.dto.PageResult;
@@ -83,6 +84,27 @@ class StudentCoursePageTest {
 
     @Test
     @WithMockUser(username = "20200001", roles = "STUDENT")
+    void batchResultsRenderAsAlignedColumns() throws Exception {
+        when(courseQueryService.sessionJson()).thenReturn("{}");
+        when(courseQueryService.pageForStudent(anyString(), any(), anyBoolean(), anyBoolean(),
+                anyInt(), anyInt())).thenReturn(new PageResult<>(List.of(), 0, 10, 1));
+        when(courseQueryService.listSelected(anyString())).thenReturn(List.of());
+
+        mockMvc.perform(get("/student/courses")
+                        .flashAttr("results", List.of(
+                                new CourseActionResult("a002", "选课成功", true),
+                                new CourseActionResult("hs001", "已经选过该课程", false)))
+                        .flashAttr("message", "成功 1 门，未成功 1 门。"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("result-lines")))
+                .andExpect(content().string(containsString("result-cno")))
+                .andExpect(content().string(containsString("a002")))
+                .andExpect(content().string(containsString("hs001")))
+                .andExpect(content().string(containsString("已经选过该课程")));
+    }
+
+    @Test
+    @WithMockUser(username = "20200001", roles = "STUDENT")
     void enrollActionCallsServiceAndRedirects() throws Exception {
         when(enrollmentService.enroll("20200001", "t001")).thenReturn(EnrollmentOutcome.OK);
 
@@ -109,7 +131,45 @@ class StudentCoursePageTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("全局智能推荐")))
                 .andExpect(content().string(containsString("高等数学（一）")))
-                .andExpect(content().string(containsString("一键选上推荐课程")));
+                .andExpect(content().string(containsString("一键选上推荐课程")))
+                .andExpect(content().string(containsString("/student/recommend/enroll")));
+    }
+
+    @Test
+    @WithMockUser(username = "20200001", roles = "STUDENT")
+    void enrollRecommendedRecomputesOnSubmit() throws Exception {
+        var first = new CourseRow("m001", "高等数学（一）", "罗老师", "A301",
+                100, 5, 0, 100, "周二 08:30-10:10", "-",
+                true, false, false, false, false);
+        var second = new CourseRow("m002", "线性代数", "马老师", "A302",
+                80, 3, 0, 80, "周三 13:00-15:35", "-",
+                true, false, false, false, false);
+        when(recommendationService.recommend("20200001", 30))
+                .thenReturn(new RecommendationResult(List.of(first, second), 10, 8, 20, 30));
+        when(enrollmentService.enroll("20200001", "m001")).thenReturn(EnrollmentOutcome.OK);
+        when(enrollmentService.enroll("20200001", "m002")).thenReturn(EnrollmentOutcome.FULL);
+
+        mockMvc.perform(post("/student/recommend/enroll").with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/student/recommend"))
+                .andExpect(flash().attribute("message", "成功 1 门，未成功 1 门。"))
+                .andExpect(flash().attributeExists("results"));
+
+        verify(recommendationService).recommend("20200001", 30);
+        verify(enrollmentService).enroll("20200001", "m001");
+        verify(enrollmentService).enroll("20200001", "m002");
+    }
+
+    @Test
+    @WithMockUser(username = "20200001", roles = "STUDENT")
+    void enrollRecommendedWithNothingReturnsToRecommendPage() throws Exception {
+        when(recommendationService.recommend("20200001", 30))
+                .thenReturn(new RecommendationResult(List.of(), 30, 0, 0, 30));
+
+        mockMvc.perform(post("/student/recommend/enroll").with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/student/recommend"))
+                .andExpect(flash().attribute("message", "当前没有可推荐的课程。"));
     }
 
     @Test

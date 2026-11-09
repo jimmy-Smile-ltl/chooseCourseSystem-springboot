@@ -7,6 +7,7 @@ import com.example.choosecourse.service.ScheduleIcsService;
 import com.example.choosecourse.service.ScheduleService;
 import com.example.choosecourse.service.StudentAccountService;
 import com.example.choosecourse.service.StudentQueryService;
+import com.example.choosecourse.web.dto.CourseActionResult;
 import com.example.choosecourse.web.dto.CourseRow;
 import com.example.choosecourse.web.dto.EnrollmentOutcome;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -102,17 +104,42 @@ public class StudentController {
             return "redirect:/student/courses";
         }
 
-        StringBuilder message = new StringBuilder();
+        List<CourseActionResult> results = new ArrayList<>();
         for (String rawCno : cnos) {
             if (rawCno == null || rawCno.isBlank()) {
                 continue;
             }
             String cno = rawCno.trim();
             EnrollmentOutcome outcome = enrollmentService.enroll(authentication.getName(), cno);
-            message.append(cno).append("：").append(outcome.getMessage()).append('\n');
+            results.add(new CourseActionResult(cno, outcome.getMessage(),
+                    outcome == EnrollmentOutcome.OK));
         }
-        redirectAttributes.addFlashAttribute("message", message.toString());
+        flashResults(redirectAttributes, results);
         return "redirect:/student/courses";
+    }
+
+    /**
+     * 一键选上推荐课程：不信任页面上的旧课程号，提交时重新计算推荐，
+     * 避免重复提交时对同一批课程逐门报“已经选过”。
+     */
+    @PostMapping("/recommend/enroll")
+    public String enrollRecommended(Authentication authentication,
+                                    RedirectAttributes redirectAttributes) {
+        var recommendation = recommendationService.recommend(authentication.getName(), maxCredits);
+        if (recommendation.getCourses().isEmpty()) {
+            redirectAttributes.addFlashAttribute("message", "当前没有可推荐的课程。");
+            return "redirect:/student/recommend";
+        }
+
+        List<CourseActionResult> results = new ArrayList<>();
+        for (CourseRow course : recommendation.getCourses()) {
+            EnrollmentOutcome outcome = enrollmentService.enroll(
+                    authentication.getName(), course.getCno());
+            results.add(new CourseActionResult(course.getCno(), outcome.getMessage(),
+                    outcome == EnrollmentOutcome.OK));
+        }
+        flashResults(redirectAttributes, results);
+        return "redirect:/student/recommend";
     }
 
     @PostMapping("/withdraw")
@@ -124,17 +151,26 @@ public class StudentController {
             return "redirect:/student/courses";
         }
 
-        StringBuilder message = new StringBuilder();
+        List<CourseActionResult> results = new ArrayList<>();
         for (String rawCno : cnos) {
             if (rawCno == null || rawCno.isBlank()) {
                 continue;
             }
             String cno = rawCno.trim();
             boolean removed = enrollmentService.withdraw(authentication.getName(), cno);
-            message.append(cno).append("：").append(removed ? "退课成功" : "不在您的课表中").append('\n');
+            results.add(new CourseActionResult(cno,
+                    removed ? "退课成功" : "不在您的课表中", removed));
         }
-        redirectAttributes.addFlashAttribute("message", message.toString());
+        flashResults(redirectAttributes, results);
         return "redirect:/student/courses";
+    }
+
+    private static void flashResults(RedirectAttributes redirectAttributes,
+                                     List<CourseActionResult> results) {
+        redirectAttributes.addFlashAttribute("results", results);
+        long succeeded = results.stream().filter(CourseActionResult::success).count();
+        redirectAttributes.addFlashAttribute("message",
+                "成功 " + succeeded + " 门，未成功 " + (results.size() - succeeded) + " 门。");
     }
 
     @GetMapping("/schedule")

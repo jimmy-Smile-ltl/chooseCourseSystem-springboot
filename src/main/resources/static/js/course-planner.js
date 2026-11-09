@@ -162,6 +162,12 @@
         if (conflicts.length) {
             event.preventDefault();
             alert('勾选课程存在时间冲突：' + conflicts.join('；'));
+            return;
+        }
+        var submitButton = form.querySelector('button[type="submit"]');
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = '正在提交…';
         }
     });
 

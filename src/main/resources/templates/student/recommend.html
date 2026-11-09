@@ -20,6 +20,8 @@
         <a class="button" th:href="@{/student/courses}">返回选课</a>
     </div>
 
+    <div th:replace="~{fragments/flash :: flash}"></div>
+
     <div class="cart-summary">
         <span>已选 <strong th:text="${result.selectedCredits}">0</strong> 学分</span>
         <span>剩余 <strong th:text="${result.availableCredits}">0</strong> 学分</span>
@@ -34,10 +36,8 @@
         <a th:href="@{/student/courses}">返回选课页</a> 手动调整。
     </p>
 
-    <form th:if="${!#lists.isEmpty(result.courses)}"
-          th:action="@{/student/enroll}" method="post">
-        <input type="hidden" name="cno" th:each="c : ${result.courses}" th:value="${c.cno}">
-
+    <form id="recommend-form" th:if="${!#lists.isEmpty(result.courses)}"
+          th:action="@{/student/recommend/enroll}" method="post">
         <div class="table-wrap">
             <table>
                 <thead>
@@ -80,5 +80,7 @@
         如果课程名额或时间在你提交前发生变化，可能只有部分课程成功。
     </p>
 </main>
+
+<script th:src="@{/js/recommend.js}" defer></script>
 </body>
 </html>

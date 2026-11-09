@@ -47,7 +47,8 @@ Spring Boot + PostgreSQL。
 - 学生课程列表：服务端分页（默认 20 门/页）、输入即搜索（防抖/兼容中文输入法）、
   只看有空位/只看无冲突
 - 课程状态一屏展示：已修/已选/先修未满足/时间冲突/余量
-- 选课页：批量勾选、实时学分与冲突预检、全局智能推荐（跨分页分析全部可选课程）
+- 选课页：批量勾选、实时学分与冲突预检、全局智能推荐（跨分页分析全部可选课程；
+  一键选课时服务端重新计算推荐，结果按课程号对齐分行展示）
 - 选课事务：学生行锁 + 课程行锁 + 先修校验 + 时间冲突 + 容量 + 学分上限 + 唯一约束
 - 学分目标礼炮：选课清单累计学分达到目标（默认 20）时触发双侧礼炮/彩带 + 达成提示，
   每个会话只庆祝一次；`prefers-reduced-motion` 下只显示文字提示
@@ -80,7 +81,7 @@ Spring Boot + PostgreSQL。
 cd server
 
 # Windows
-mvnw.cmd test          # 48 个测试，含嵌入式 PostgreSQL 集成/E2E/并发抢课
+mvnw.cmd test          # 51 个测试，含嵌入式 PostgreSQL 集成/E2E/并发抢课
 mvnw.cmd spring-boot:run
 
 # macOS / Linux
@@ -94,7 +95,7 @@ mvnw.cmd spring-boot:run
   首次运行会下载 Windows/Linux 的 PostgreSQL 二进制到临时目录。
 - `LoginPageTest`、`AdminPageTest`、`StudentCoursePageTest` 使用 H2 做 Web 冒烟；
   真实 schema 和 SQL 由嵌入式 PostgreSQL 测试覆盖。
-- 当前 48 个测试全部通过：Flyway schema、accounts 视图、登录、验证码/限流、权限隔离、
+- 当前 51 个测试全部通过：Flyway schema、accounts 视图、登录、验证码/限流、权限隔离、
   管理员页面、学生课程页/服务端分页、课表色块/冲突、ICS 导出、选课事务（先修/冲突/
   容量/重复/退课重选/学分上限）、CSV 解析与导入校验/事务导入、演示种子幂等性、
   管理端课程/学生 CRUD、学生改密/改手机、忘记密码重置、并发抢最后一个名额、
