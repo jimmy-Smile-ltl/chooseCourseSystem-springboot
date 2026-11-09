@@ -3,7 +3,7 @@
 <body>
 <div th:fragment="flash"
      th:if="${message != null or (results != null and !#lists.isEmpty(results))}">
-    <div class="alert ok" th:if="${results != null and !#lists.isEmpty(results)}">
+    <div class="alert ok result-alert" th:if="${results != null and !#lists.isEmpty(results)}">
         <div class="result-lines">
             <th:block th:each="r : ${results}">
                 <span class="result-cno" th:text="${r.cno}">a002</span>

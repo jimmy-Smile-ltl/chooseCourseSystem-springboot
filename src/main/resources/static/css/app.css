@@ -153,6 +153,10 @@ h2 {
 }
 
 /* 批量选课/退课结果：课程号一列、结果一列，自动按最长课程号对齐 */
+.alert.result-alert {
+    white-space: normal;
+}
+
 .result-lines {
     display: grid;
     grid-template-columns: max-content 1fr;
