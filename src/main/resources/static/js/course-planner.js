@@ -1,7 +1,7 @@
 /*
  * 选课页增强：
  * 1. 勾选时实时统计学分、检测勾选课程之间的时间冲突
- * 2. 一键智能推荐当前页一组不冲突、不超学分的课程
+ * 2. 全局智能推荐由 /student/recommend 服务端处理
  * 搜索/筛选/分页由服务端完成；服务端仍会在提交时做最终校验。
  */
 (function () {
@@ -15,7 +15,6 @@
     var maxCredits = parseInt(form.getAttribute('data-max-credits') || '30', 10);
     var selectedCredits = parseInt(form.getAttribute('data-selected-credits') || '0', 10);
     var rows = Array.prototype.slice.call(document.querySelectorAll('tr.course-row'));
-    var smartPickButton = document.getElementById('smart-pick');
     var clearPicksButton = document.getElementById('clear-picks');
     var summary = document.getElementById('cart-summary');
     var countEl = document.getElementById('pick-count');
@@ -129,45 +128,6 @@
         updateSummary();
     }
 
-    function smartPickCourses() {
-        clearPicks();
-
-        var candidates = rows.filter(function (row) {
-            var checkbox = checkboxOf(row);
-            return checkbox && !checkbox.disabled;
-        });
-
-        candidates.sort(function (a, b) {
-            var creditsDiff = (parseInt(b.getAttribute('data-credits'), 10) || 0)
-                    - (parseInt(a.getAttribute('data-credits'), 10) || 0);
-            if (creditsDiff !== 0) {
-                return creditsDiff;
-            }
-            return (parseInt(b.getAttribute('data-remaining'), 10) || 0)
-                    - (parseInt(a.getAttribute('data-remaining'), 10) || 0);
-        });
-
-        var picked = [];
-        var totalCredits = 0;
-        var remainingCredits = maxCredits - selectedCredits;
-        candidates.forEach(function (row) {
-            var credits = parseInt(row.getAttribute('data-credits'), 10) || 0;
-            if (totalCredits + credits > remainingCredits) {
-                return;
-            }
-            var cno = row.getAttribute('data-cno');
-            var conflicts = picked.some(function (other) {
-                return haveConflict(cno, other.getAttribute('data-cno'));
-            });
-            if (!conflicts) {
-                checkboxOf(row).checked = true;
-                picked.push(row);
-                totalCredits += credits;
-            }
-        });
-        updateSummary();
-    }
-
     rows.forEach(function (row) {
         var checkbox = checkboxOf(row);
         if (checkbox) {
@@ -175,9 +135,6 @@
         }
     });
 
-    if (smartPickButton) {
-        smartPickButton.addEventListener('click', smartPickCourses);
-    }
     if (clearPicksButton) {
         clearPicksButton.addEventListener('click', clearPicks);
     }
@@ -199,7 +156,9 @@
                     + ' 学分，累计 ' + total + ' 超过上限 ' + maxCredits + '。');
             return;
         }
-        var conflicts = conflictsAmong(picked);
+        var conflicts = conflictPairs(picked).map(function (pair) {
+            return pair.label;
+        });
         if (conflicts.length) {
             event.preventDefault();
             alert('勾选课程存在时间冲突：' + conflicts.join('；'));

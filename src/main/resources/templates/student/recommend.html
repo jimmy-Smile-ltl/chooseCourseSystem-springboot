@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>全局智能推荐 · 选课系统</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<nav th:replace="~{fragments/nav :: nav}"></nav>
+
+<main class="container">
+    <div class="schedule-head">
+        <div>
+            <h1>全局智能推荐</h1>
+            <p class="subtitle">
+                跨越所有分页分析全部可选课程，自动避开时间冲突、已满和先修未满足的课程。
+            </p>
+        </div>
+        <a class="button" th:href="@{/student/courses}">返回选课</a>
+    </div>
+
+    <div class="cart-summary">
+        <span>已选 <strong th:text="${result.selectedCredits}">0</strong> 学分</span>
+        <span>剩余 <strong th:text="${result.availableCredits}">0</strong> 学分</span>
+        <span>
+            推荐 <strong th:text="${#lists.size(result.courses)}">0</strong> 门 ·
+            共 <strong th:text="${result.recommendedCredits}">0</strong> 学分
+        </span>
+    </div>
+
+    <p class="empty" th:if="${#lists.isEmpty(result.courses)}">
+        暂时没有可推荐的课程：可能已经选满、没有剩余学分，或所有可选课程都存在冲突/先修限制。
+        <a th:href="@{/student/courses}">返回选课页</a> 手动调整。
+    </p>
+
+    <form th:if="${!#lists.isEmpty(result.courses)}"
+          th:action="@{/student/enroll}" method="post">
+        <input type="hidden" name="cno" th:each="c : ${result.courses}" th:value="${c.cno}">
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>课程号</th>
+                    <th>课程名称</th>
+                    <th>教师</th>
+                    <th>学分</th>
+                    <th>上课时间</th>
+                    <th>地点</th>
+                    <th>余量 / 容量</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="c : ${result.courses}">
+                    <td th:text="${c.cno}">cno</td>
+                    <td th:text="${c.name}">课程</td>
+                    <td th:text="${c.teacher}">教师</td>
+                    <td th:text="${c.credits}">2</td>
+                    <td th:text="${c.timeText}">时间</td>
+                    <td th:text="${c.location}">地点</td>
+                    <td>
+                        <span th:text="${c.remainingSeats}">0</span>
+                        /
+                        <span th:text="${c.capacity}">0</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="panel-actions">
+            <button type="submit" class="primary">一键选上推荐课程</button>
+            <a class="button" th:href="@{/student/courses}">返回手动选择</a>
+        </div>
+    </form>
+
+    <p class="hint">
+        推荐基于当前课程余量和时间表计算；提交时服务器仍会逐门校验。
+        如果课程名额或时间在你提交前发生变化，可能只有部分课程成功。
+    </p>
+</main>
+</body>
+</html>

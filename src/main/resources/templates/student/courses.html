@@ -32,9 +32,9 @@
     </form>
 
     <div class="course-toolbar secondary-toolbar">
-        <button id="smart-pick" type="button" class="primary">⚡ 智能推荐（本页）</button>
+        <a class="button primary" th:href="@{/student/recommend}">⚡ 全局智能推荐</a>
         <button id="clear-picks" type="button" class="button">清空勾选</button>
-        <span class="hint-inline">筛选和分页由服务端完成，智能推荐只作用于当前页。</span>
+        <span class="hint-inline">筛选和分页由服务端完成，智能推荐会跨页分析全部可选课程。</span>
     </div>
 
     <div id="cart-summary" class="cart-summary">

@@ -2,10 +2,12 @@ package com.example.choosecourse.web;
 
 import com.example.choosecourse.service.CourseQueryService;
 import com.example.choosecourse.service.EnrollmentService;
+import com.example.choosecourse.service.RecommendationService;
 import com.example.choosecourse.service.StudentQueryService;
 import com.example.choosecourse.web.dto.CourseRow;
 import com.example.choosecourse.web.dto.EnrollmentOutcome;
 import com.example.choosecourse.web.dto.PageResult;
+import com.example.choosecourse.web.dto.RecommendationResult;
 import com.example.choosecourse.web.dto.ScheduleEntry;
 import com.example.choosecourse.web.dto.StudentRow;
 import org.junit.jupiter.api.Test;
@@ -55,6 +57,9 @@ class StudentCoursePageTest {
     @MockitoBean
     private StudentQueryService studentQueryService;
 
+    @MockitoBean
+    private RecommendationService recommendationService;
+
     @Test
     @WithMockUser(username = "20200001", roles = "STUDENT")
     void coursePageRendersWithStudentData() throws Exception {
@@ -72,7 +77,8 @@ class StudentCoursePageTest {
                 .andExpect(content().string(containsString("已选")))
                 .andExpect(content().string(containsString("目标")))
                 .andExpect(content().string(containsString("data-goal=\"20\"")))
-                .andExpect(content().string(containsString("credit-hud")));
+                .andExpect(content().string(containsString("credit-hud")))
+                .andExpect(content().string(containsString("全局智能推荐")));
     }
 
     @Test
@@ -88,6 +94,22 @@ class StudentCoursePageTest {
                 .andExpect(flash().attributeExists("message"));
 
         verify(enrollmentService).enroll("20200001", "t001");
+    }
+
+    @Test
+    @WithMockUser(username = "20200001", roles = "STUDENT")
+    void recommendationPageRenders() throws Exception {
+        var course = new CourseRow("m001", "高等数学（一）", "罗老师", "A301",
+                100, 5, 0, 100, "周二 08:30-10:10", "-",
+                true, false, false, false, false);
+        when(recommendationService.recommend(anyString(), anyInt()))
+                .thenReturn(new RecommendationResult(List.of(course), 10, 5, 20, 30));
+
+        mockMvc.perform(get("/student/recommend"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("全局智能推荐")))
+                .andExpect(content().string(containsString("高等数学（一）")))
+                .andExpect(content().string(containsString("一键选上推荐课程")));
     }
 
     @Test

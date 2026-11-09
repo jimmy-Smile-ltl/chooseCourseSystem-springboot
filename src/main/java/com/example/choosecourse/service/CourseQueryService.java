@@ -1,6 +1,7 @@
 package com.example.choosecourse.service;
 
 import com.example.choosecourse.web.dto.CourseRow;
+import com.example.choosecourse.web.dto.CourseSession;
 import com.example.choosecourse.web.dto.PageResult;
 import com.example.choosecourse.web.dto.ScheduleEntry;
 import com.example.choosecourse.web.dto.StudentRow;
@@ -279,6 +280,26 @@ public class CourseQueryService {
                 rs.getTime("start_time").toLocalTime(),
                 rs.getTime("end_time").toLocalTime()
         ), sno);
+    }
+
+    /**
+     * 全量上课时段，用于服务端全局智能推荐的冲突计算。
+     */
+    public Map<String, List<CourseSession>> listActiveSessions() {
+        Map<String, List<CourseSession>> sessions = new LinkedHashMap<>();
+        jdbc.query("""
+                select cs.cno, cs.day_of_week, cs.start_time, cs.end_time
+                from course_sessions cs
+                join courses c on c.cno = cs.cno
+                where c.is_active
+                order by cs.cno, cs.day_of_week, cs.start_time
+                """, (RowCallbackHandler) rs -> sessions
+                .computeIfAbsent(rs.getString("cno").trim(), key -> new ArrayList<>())
+                .add(new CourseSession(
+                        rs.getInt("day_of_week"),
+                        rs.getTime("start_time").toLocalTime(),
+                        rs.getTime("end_time").toLocalTime())));
+        return sessions;
     }
 
     /**

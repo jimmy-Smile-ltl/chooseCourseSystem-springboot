@@ -2,6 +2,7 @@ package com.example.choosecourse.web;
 
 import com.example.choosecourse.service.CourseQueryService;
 import com.example.choosecourse.service.EnrollmentService;
+import com.example.choosecourse.service.RecommendationService;
 import com.example.choosecourse.service.ScheduleIcsService;
 import com.example.choosecourse.service.ScheduleService;
 import com.example.choosecourse.service.StudentAccountService;
@@ -33,6 +34,7 @@ public class StudentController {
     private final StudentAccountService studentAccountService;
     private final ScheduleService scheduleService;
     private final ScheduleIcsService scheduleIcsService;
+    private final RecommendationService recommendationService;
     private final int maxCredits;
     private final int creditGoal;
     private final int pageSize;
@@ -43,6 +45,7 @@ public class StudentController {
                              StudentAccountService studentAccountService,
                              ScheduleService scheduleService,
                              ScheduleIcsService scheduleIcsService,
+                             RecommendationService recommendationService,
                              @Value("${app.max-credits:30}") int maxCredits,
                              @Value("${app.credit-goal:20}") int creditGoal,
                              @Value("${app.page-size:20}") int pageSize) {
@@ -52,6 +55,7 @@ public class StudentController {
         this.studentAccountService = studentAccountService;
         this.scheduleService = scheduleService;
         this.scheduleIcsService = scheduleIcsService;
+        this.recommendationService = recommendationService;
         this.maxCredits = maxCredits;
         this.creditGoal = creditGoal;
         this.pageSize = pageSize;
@@ -80,6 +84,13 @@ public class StudentController {
         model.addAttribute("creditGoal", creditGoal);
         model.addAttribute("sessionsJson", courseQueryService.sessionJson());
         return "student/courses";
+    }
+
+    @GetMapping("/recommend")
+    public String recommend(Authentication authentication, Model model) {
+        model.addAttribute("result",
+                recommendationService.recommend(authentication.getName(), maxCredits));
+        return "student/recommend";
     }
 
     @PostMapping("/enroll")
